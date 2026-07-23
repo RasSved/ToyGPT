@@ -14,7 +14,24 @@ def positional_embedding_lookup(pos_embedding_matrix, seq_len):
     
     return embedding_lookup(pos_embedding_matrix, pos)
 
+# Element vise addition between vektors
 def combine_embeddings(token_embeddings, pos_embeddings):
+    
+    if len(token_embeddings) != len(pos_embeddings):
+        raise ValueError("Vektors are different length")
+
+    result = list()
+    for lst, lst2 in zip(token_embeddings, pos_embeddings):
+        if len(lst) != len(lst2):
+            raise ValueError("Lists are different lengths")
+        combined = list()
+        for i in range(len(lst)):
+            combined.append(lst[i] + lst2[i])
+        result.append(combined)
+        
+
+    return result
+
 
 token_embeddings = [[0.1, 0.2], [0.3, 0.4]]
 pos_embeddings   = [[0.9, 0.1], [0.8, 0.2]]
