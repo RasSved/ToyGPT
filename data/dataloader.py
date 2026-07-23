@@ -29,6 +29,8 @@ class tokenizer(object):
 with open("text/the-verdict.txt", "r") as f:
     text = f.read()
 
+print(text)
+
 tokenized = tokenizer(text)
 
 
