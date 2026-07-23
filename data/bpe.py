@@ -1,82 +1,109 @@
-import re
+import regex as re
 from collections import Counter
 
 
-class BPE:
+class bpe:
 
+    # Or's through the different types
     PATTERN = r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}{1,3}| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
 
     def __init__(self):
-        self.byte_encoder = self.byte_encoder()
-        self.byte_decoder = {v: k for k, v in self.byte_encoder.items()}
-        self.vocab = {}          # id -> bytes
-        self.inv_vocab = {}      # bytes -> id
-        self.merges = {}         # (bytes, bytes) -> rank
         self.pattern = re.compile(self.PATTERN)
-        self.special_tokens = {} # str -> id
+        self.vocab = {idx: bytes([idx]) for idx in range(256)}
+        self.merges = {}
 
-    def byte_encoder(self) -> dict:
-        """
-        Build the fixed, reversible byte(0-255) -> visible unicode char map.
-        Printable bytes map to themselves; the rest get shifted into an
-        unused unicode range so every byte has a printable representative.
-        """
-        raise NotImplementedError
-
-    def regex_split(self, text: str) -> list[str]:
-        """Split raw unicode text into chunks using self.pattern."""
+    # Use that pattern we made with the or checks
+    def regex_split(self, text):
         return self.pattern.findall(text)
 
-    def utf8_encode_chunk(self, chunk: str) -> list[str]:
-        """
-        Convert one pretokenized chunk to its UTF-8 bytes, then remap each
-        byte to its visible-unicode representative via self.byte_encoder.
-        Returns a list of single-symbol strings (the BPE base units).
-        """
-        raw_bytes = chunk.encode("utf-8")
-        return [self.byte_encoder[b] for b in raw_bytes]
+    # Take those token we just split up and encode them (utf bytes)
+    def utf_encoding(self, tokens):
+        return [token.encode("utf-8") for token in tokens]
 
-    def get_pair_counts(self, chunks: list[list[str]]) -> Counter:
-        """Count adjacent symbol pairs across all chunks."""
-        raise NotImplementedError
+    # Id our bytes from vocab 
+    def byte_to_id(self):
+        return {v: k for k, v in self.vocab.items()}
 
-    def merge_pair(self, chunks: list[list[str]], pair: tuple, new_symbol: str) -> list[list[str]]:
-        """Replace every occurrence of `pair` with `new_symbol` in every chunk."""
-        raise NotImplementedError
+    # Make a list of the ids we have from our utf bytes
+    def get_ids(self, encoded_tokens):
+        return [list(token) for token in encoded_tokens]
 
-    def train(self, corpus: list[str], vocab_size: int):
-        """
-        Full training loop:
-          1. regex_split + utf8_encode_chunk every document -> list of chunks
-          2. iteratively count pairs, merge the most frequent, record rank
-          3. stop once len(vocab) == vocab_size
-          4. populate self.vocab / self.inv_vocab / self.merges
-        """
-        raise NotImplementedError
+    # Use the learned merges on new text and return its ids
+    def encoding(self, text):
+        regex = self.regex_split(text)
+        encoding = self.utf_encoding(regex)
+        id_list = self.get_ids(encoding)
 
-    def apply_merges(self, symbols: list[str]) -> list[str]:
-        """
-        Given one chunk's list of symbols, repeatedly apply the
-        lowest-rank applicable merge from self.merges until none apply.
-        """
-        raise NotImplementedError
+        for pair, new_id in self.merges.items():
+            id_list = [self.merge(ids, pair, new_id) for ids in id_list]
 
-    def encode(self, text: str) -> list[int]:
-        """text -> regex_split -> utf8_encode_chunk -> apply_merges -> ids"""
-        raise NotImplementedError
+        return id_list
 
-    def decode(self, ids: list[int]) -> str:
-        """ids -> bytes (via vocab + byte_decoder) -> utf-8 decode -> text"""
-        raise NotImplementedError
+    # Turns ids back into its original text
+    def decode(self, ids):
+        byte_seq = b"".join(self.vocab[i] for i in ids)
+        return byte_seq.decode("utf-8")
 
-    def save(self, path: str):
-        raise NotImplementedError
+    # Merge two ids into one
+    def merge(self, ids, pair, new_id):
+        merged = []
+        i = 0
+        while i < len(ids):
+            if  i < len(ids) - 1 and (ids[i], ids[i+1]) == pair:
+                merged.append(new_id)
+                i += 2
+            else:
+                merged.append(ids[i])
+                i += 1
 
-    def load(self, path: str):
-        raise NotImplementedError
+        return merged
+
+    # Count tof often id pair occures 
+    def count_pairs(self, ids_list):
+        pairs = []
+        for inner in ids_list:
+            for i in range(len(inner) - 1):
+                pairs.append((inner[i], inner[i+1]))
+
+        return Counter(pairs)
+
+    # Return the most frequent byte pair
+    def most_frequent_pair(self, pair_counts):
+        best = 0
+        result = None
+        for k, v in pair_counts.items():
+            if v > best:
+                best = v
+                result = k
+        
+        return result
+
+    # Merge the num_merges most frequent pairs
+    def train(self, ids_list, num_merges):
+
+        for i in range(num_merges):
+            pair_count = self.count_pairs(ids_list)
+            most_frequent = self.most_frequent_pair(pair_count)   
+
+            if most_frequent is None:
+                break
+
+            new_id = 256 + i
+            ids_list = [self.merge(ids, most_frequent, new_id) for ids in ids_list]
+            self.merges[most_frequent] = new_id
+            self.vocab[new_id] = self.vocab[most_frequent[0]] + self.vocab[most_frequent[1]]
+
+        return ids_list
+
+
+
     
 
 with open ("text/the-verdict.txt", "r") as f:
     text = f.read()
 
-print(text)
+tokenizer = bpe()
+tokens = tokenizer.regex_split(text)
+encoded = tokenizer.utf_encoding(tokens)
+ids_list = tokenizer.get_ids(encoded)
+final_ids = tokenizer.train(ids_list, num_merges=50)
