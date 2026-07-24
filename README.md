@@ -15,3 +15,6 @@ Where we actaully make the vectors from the words, we have straight id to vector
 
 ## toygpt/attention.py
 We make an attention score that we later turn into a softmax so we can get better representing vektors. 
+
+
+Testing git login
