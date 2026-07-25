@@ -3,16 +3,19 @@ import math
 # Normalize the input vector to have zero mean and unit variance using the population 
 # standard deviation with epsilon for numerical stability.
 # Also added scaling with gamma and shifting with beta
-def layer_norm(x, gamma, beta, eps=1e-5):
-    mean = sum(x) / len(x)
-    centered = [i - mean for i in x]
-    result = [i * i for i in centered]
-    population_variance = sum(result) / len(result)
+def layer_norm(x_seq, gamma, beta, eps=1e-5):
+    output= []
+    for x in x_seq:
+        mean = sum(x) / len(x)
+        centered = [i - mean for i in x]
+        result = [i * i for i in centered]
+        population_variance = sum(result) / len(result)
 
-    std = math.sqrt(population_variance + eps)
-    normalized = [(i / std) for i in centered]
-
-    return [(a * b) + c for a,b,c in zip(normalized,gamma,beta)]
+        std = math.sqrt(population_variance + eps)
+        normalized = [(i / std) for i in centered]
+        scaled_shifted = [(a * b) + c for a,b,c in zip(normalized,gamma,beta)]
+        output.append(scaled_shifted)
+    return output
 
 # Gaussian Error Linear Unit activation function
 def gelu(x):
@@ -29,11 +32,14 @@ def linear(x, W, b):
 
 # take input x and project it up with linear then use activation function on it and 
 # scale it back down with linear
-def feed_forward(x, W1, b1, W2, b2):
-    l1 = linear(x, W1, b1)
-    l1_g = [gelu(i) for i in l1]
-    l2 = linear(l1_g, W2, b2)
-    return l2
+def feed_forward(x_seq, W1, b1, W2, b2):
+    output = []
+    for x in x_seq:
+        l1 = linear(x, W1, b1)
+        l1_g = [gelu(i) for i in l1]
+        l2 = linear(l1_g, W2, b2)
+        output.append(l2)
+    return output
 
 # Element vise addition between vektors (same as embeddings/combine_embeddings())
 def add_residual(x, sublayer_output):
@@ -51,10 +57,4 @@ def add_residual(x, sublayer_output):
         result.append(combined)
 
     return result
-
-x_seq = [[1.0, 2.0], [0.5, 0.5]]
-sublayer_output_seq = [[0.1, -0.2], [1.0, 1.0]]
-
-print(add_residual(x_seq, sublayer_output_seq))
-# [[1.1, 1.8], [1.5, 1.5]]
 

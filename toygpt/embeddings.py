@@ -31,10 +31,3 @@ def combine_embeddings(token_embeddings, pos_embeddings):
         
 
     return result
-
-
-token_embeddings = [[0.1, 0.2], [0.3, 0.4]]
-pos_embeddings   = [[0.9, 0.1], [0.8, 0.2]]
-
-test = combine_embeddings(token_embeddings, pos_embeddings)
-print(test)
