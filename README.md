@@ -17,4 +17,4 @@ Where we actaully make the vectors from the words, we have straight id to vector
 We make an attention score that we later turn into a softmax so we can get better representing vektors. 
 
 
-Testing git login
+Note for selfe in layers everything is for single and not seq expect the residual_add (think everything should be seq level)
