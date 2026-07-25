@@ -27,9 +27,14 @@ def linear(x, W, b):
     vec_mult = [sum(x) for x in zip(*res)]
     return [i + j for i, j in zip(vec_mult,b)]
 
-
+# take input x and project it up with linear then use activation function on it and 
+# scale it back down with linear
 def feed_forward(x, W1, b1, W2, b2):
-    
+    l1 = linear(x, W1, b1)
+    l1_g = [gelu(i) for i in l1]
+    l2 = linear(l1_g, W2, b2)
+    return l2
+
 
 x = [1.0, 2.0]
 W = [[1.0, 0.0, 1.0],
