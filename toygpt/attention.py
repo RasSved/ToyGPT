@@ -95,6 +95,63 @@ def causal_mask(scores, query_idx):
 
     return result
 
-masked = causal_mask([2.0, 1.0, 3.0, 0.5], query_idx=1)
-weights = softmax(masked)
-print(weights)
+# This is the same self attention all queries but we added the causal masking so we
+# can use it for generating text
+def causal_self_attention(inputs, W_query, W_key, W_value):
+    keys = [project(vec, W_key) for vec in inputs]
+    values = [project(vec, W_value) for vec in inputs]
+
+    result = []
+    for query_idx in range(len(inputs)):
+        q = project(inputs[query_idx], W_query)
+        a_q_score = attention_scores(q, keys)
+        d_k = len(q)
+        scaled = scale_scores(a_q_score, d_k)
+        causal_masked = causal_mask(scaled, query_idx)
+        smax = softmax(causal_masked)
+        context = context_vector(smax, values)
+        result.append(context)
+
+    return result
+
+# Run causal self attention over each head using the same input and finally combinding 
+# into a list of vectors where each vector represents one token over the heads
+def multi_head_attention(inputs, heads):
+    one_list = []
+    for head in heads:
+        W_query, W_key, W_value = head
+        causal_masked = causal_self_attention(inputs, W_query, W_key, W_value)
+        one_list.append(causal_masked)
+    result = [[x for lst in group for x in lst] for group in zip(*one_list)]
+    return result
+
+inputs = [[1.0, 0.0], [0.0, 1.0]]
+
+head_A = (
+    [[1.0, 0.0], [0.0, 1.0]],   # W_query
+    [[1.0, 0.0], [0.0, 1.0]],   # W_key
+    [[1.0, 0.0], [0.0, 1.0]],   # W_value
+)
+
+head_B = (
+    [[0.0, 1.0], [1.0, 0.0]],   # W_query
+    [[0.0, 1.0], [1.0, 0.0]],   # W_key
+    [[0.0, 1.0], [1.0, 0.0]],   # W_value
+)
+head_C = (
+    [[1.0, 1.0], [1.0, -1.0]],
+    [[1.0, 1.0], [1.0, -1.0]],
+    [[1.0, 1.0], [1.0, -1.0]],
+)
+
+head_D = (
+    [[1.0, 0.0], [0.0, 1.0]],              # W_query
+    [[1.0, 0.0], [0.0, 1.0]],              # W_key
+    [[1.0, 0.0, 1.0], [0.0, 1.0, 1.0]],    # W_value -> 3-dim output
+)
+
+test = multi_head_attention(inputs, [head_A, head_B])
+# ≈ [[1.0,    0.0,    0.0,    1.0   ],
+#    [0.3302, 0.6698, 0.6698, 0.3302]]
+
+print(test)
