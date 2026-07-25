@@ -35,12 +35,26 @@ def feed_forward(x, W1, b1, W2, b2):
     l2 = linear(l1_g, W2, b2)
     return l2
 
+# Element vise addition between vektors (same as embeddings/combine_embeddings())
+def add_residual(x, sublayer_output):
+         
+    if len(x) != len(sublayer_output):
+        raise ValueError("Vektors are different length")
 
-x = [1.0, 2.0]
-W = [[1.0, 0.0, 1.0],
-     [0.0, 1.0, 1.0]]   # d_in=2 rows, d_out=3 cols
-b = [0.5, 0.5, 0.5]
+    result = []
+    for lst, lst2 in zip(x, sublayer_output):
+        if len(lst) != len(lst2):
+            raise ValueError("Lists are different lengths")
+        combined = []
+        for i in range(len(lst)):
+            combined.append(lst[i] + lst2[i])
+        result.append(combined)
 
-print(linear(x, W, b))
-# x @ W = [1*1+2*0, 1*0+2*1, 1*1+2*1] = [1.0, 2.0, 3.0]
-# + b   = [1.5, 2.5, 3.5]
+    return result
+
+x_seq = [[1.0, 2.0], [0.5, 0.5]]
+sublayer_output_seq = [[0.1, -0.2], [1.0, 1.0]]
+
+print(add_residual(x_seq, sublayer_output_seq))
+# [[1.1, 1.8], [1.5, 1.5]]
+
