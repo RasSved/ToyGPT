@@ -42,4 +42,3 @@ def gpt_model(ids, token_embedding_matrix, pos_embedding_matrix, block_params_li
     stacked = stack_transformer_blocks(combined, block_params_list)
     output = output_head(stacked, gamma_f, beta_f, W_out, b_out)
     return output
-
