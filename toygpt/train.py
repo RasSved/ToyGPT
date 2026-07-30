@@ -29,6 +29,19 @@ def calc_loss_batch(model, input_batch, target_batch):
     loss = F.cross_entropy(output.view(-1, vocab_size), target_batch.view(-1))
     return loss
 
+# Calls our loss batch calc and from those losses we take the avg returning a final avg loss int 
+def calc_loss_loader(model, dataloader, num_batches=None):
+    loss = []
+    with torch.no_grad():   
+        for num, (input_idx, target_idx) in enumerate(dataloader):
+            if num_batches != None and num == num_batches:
+                break
+            else:
+
+                loss.append(calc_loss_batch(model, input_idx, target_idx).item())
+        avg = sum(loss) / len(loss)
+        return avg
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -52,7 +65,11 @@ torch.manual_seed(42)
 model = TinyModel(vocab_size=8, d_model=8)
 optimizer = torch.optim.AdamW(model.parameters(), lr=0.01)
 
-losses = train_model(model, dl, optimizer, num_epochs=6)
-print(len(losses))   # 6  (6 windows / batch_size=2 = 3 batches per epoch, x 2 epochs)
-for l in losses:
-    print(l)
+print(calc_loss_loader(model, dl))                  # num_batches=None -> average all 3
+# 2.4091386795043945   ((2.401893+2.423917+2.401606)/3)
+
+print(calc_loss_loader(model, dl, num_batches=2))   # average first 2 only
+# 2.412905216217041     ((2.401893+2.423917)/2)
+
+print(calc_loss_loader(model, dl, num_batches=1))   # just the first batch
+# 2.401893138885498     -- should exactly equal batch 0's individual loss
