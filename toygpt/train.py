@@ -42,6 +42,14 @@ def calc_loss_loader(model, dataloader, num_batches=None):
         avg = sum(loss) / len(loss)
         return avg
 
+# Get loss of traning and val loader
+def evaluate_model(model, train_loader, val_loader, num_batches=None):
+    model.eval()
+    train_loss = calc_loss_loader(model, train_loader, num_batches)
+    val_loss = calc_loss_loader(model, val_loader, num_batches)
+    model.train()
+    return (train_loss, val_loss)
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
