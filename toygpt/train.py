@@ -12,15 +12,23 @@ def train_step(model, input_batch, target_batch, optimizer):
     return loss.item()
 
 
-# For each epoch we feed the given batch from dataloader into training step then gather the losses
-def train_model(model, dataloader, optimizer, num_epochs):
+# For each epoch we feed the given batch from train loader into training step 
+# for each eval_freq step we evaluate the model and return train and val loss as 2 lists
+def train_model(model, train_loader, val_loader, optimizer, num_epochs, eval_freq, eval_num_batches):
     model.train()
-    output = []
+    train_losses = []
+    val_losses = []
+    global_step_counter = 0
     for epoch in range(num_epochs):
-        for input_batch, target_batch in dataloader:
-            loss = train_step(model, input_batch, target_batch, optimizer)
-            output.append(loss)
-    return output
+        for input_idx, target_idx in train_loader:
+            train_step(model, input_idx, target_idx, optimizer)
+            global_step_counter += 1
+            if global_step_counter % eval_freq == 0:
+                train_loss, val_loss = evaluate_model(model, train_loader, val_loader, eval_num_batches)
+                train_losses.append(train_loss)
+                val_losses.append(val_loss)
+            
+    return train_losses, val_losses
 
 # Same as trainstep but without the training we are only instrested in the actual loss
 def calc_loss_batch(model, input_batch, target_batch):
@@ -56,11 +64,6 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from dataset import GPTDataset
 
-# small deterministic corpus, vocab_size=8
-token_ids = [1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2]
-ds = GPTDataset(token_ids, context_size=4, stride=2)
-dl = DataLoader(ds, batch_size=2, shuffle=False)
-
 class TinyModel(nn.Module):
     def __init__(self, vocab_size, d_model):
         super().__init__()
@@ -69,15 +72,22 @@ class TinyModel(nn.Module):
     def forward(self, ids):
         return self.out(self.emb(ids))
 
+train_ids = [1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2]   # 6 windows
+val_ids   = [3,4,5,6,7,1,2,3]                     # 2 windows
+
+train_ds = GPTDataset(train_ids, context_size=4, stride=2)
+val_ds   = GPTDataset(val_ids, context_size=4, stride=2)
+
+train_dl = DataLoader(train_ds, batch_size=2, shuffle=False)   # 3 batches/epoch
+val_dl   = DataLoader(val_ds, batch_size=2, shuffle=False)
+
 torch.manual_seed(42)
 model = TinyModel(vocab_size=8, d_model=8)
 optimizer = torch.optim.AdamW(model.parameters(), lr=0.01)
 
-print(calc_loss_loader(model, dl))                  # num_batches=None -> average all 3
-# 2.4091386795043945   ((2.401893+2.423917+2.401606)/3)
+train_losses, val_losses = train_model(
+    model, train_dl, val_dl, optimizer,
+    num_epochs=2, eval_freq=2, eval_num_batches=1
+)
 
-print(calc_loss_loader(model, dl, num_batches=2))   # average first 2 only
-# 2.412905216217041     ((2.401893+2.423917)/2)
-
-print(calc_loss_loader(model, dl, num_batches=1))   # just the first batch
-# 2.401893138885498     -- should exactly equal batch 0's individual loss
+print(train_losses, val_losses)

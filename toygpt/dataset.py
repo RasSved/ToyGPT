@@ -44,14 +44,3 @@ class GPTDataset(Dataset):
 
     def __getitem__(self, idx):
         return (self.input_ids[idx], self.target_ids[idx])
-
-        
-
-token_ids = [1,2,3,4,5,6,7,8,9,10]
-ds = GPTDataset(token_ids, context_size=4, stride=2)
-
-len(ds.input_ids)   # 3
-print(ds.input_ids[0] )     # tensor([1, 2, 3, 4])
-print(ds.target_ids[0])     # tensor([2, 3, 4, 5])
-print(ds.input_ids[2] )     # tensor([5, 6, 7, 8])
-print(ds.target_ids[2])     # tensor([6, 7, 8, 9])
