@@ -1,5 +1,7 @@
 from model import gpt_model
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 # Greedy choice pick of taking whichever vocab entry scored the highest
 def next_token_id(logits):
@@ -19,21 +21,23 @@ def apply_temperature(logits, temperature):
 
 # We want to filter out bad tokens before we even start to look at probabilities
 def apply_top_k(logits, k):
-    seen = {}
-    
+    if k < len(logits):
+        top = torch.topk(logits, k)
+        result = torch.full_like(logits, fill_value=-float("inf"))
+        result[top.indices] = top.values
+        return result
+    else:
+        return logits
 
-
-
-logits = torch.tensor([2.0, 1.0, 0.1, 5.0, -3.0])
-
-print(apply_top_k(logits, k=2))
-# tensor([2., -inf, -inf, 5., -inf])   -- only the top 2 (5.0 and 2.0) survive
-
-print(apply_top_k(logits, k=3))
-# tensor([2., 1., -inf, 5., -inf])     -- top 3 (5.0, 2.0, 1.0) survive
-
-print(apply_top_k(logits, k=5))
-# tensor([2.0, 1.0, 0.1, 5.0, -3.0])   -- k == vocab_size -> no-op, nothing filtered
+# Combined step where we replace greedy pick prediction,
+# Apply topk if gven -> scale down with temp -> softmax -> draw index by prob 
+def sample_next_token(logits, temperature=1.0, top_k=None):
+    if top_k != None:
+        logits = apply_top_k(logits, top_k)
+    tempe = apply_temperature(logits, temperature)
+    softm = F.softmax(tempe, dim=-1)
+    prob = torch.multinomial(softm, num_samples=1)
+    return int(prob)
 
 # KV-cache for real models TODO
 # Call gpt model to get logits then with our greedy pick we get the prediction for "next word"
@@ -45,4 +49,7 @@ def generate(ids, num_new_tokens, token_embedding_matrix, pos_embedding_matrix, 
         ids = ids.copy()
         ids.append(prediction)
     return ids
+
+def generatev2(models, ids, num_new_tokens, conext_length, temperature=1.0, top_k=None):
+    pass
 
