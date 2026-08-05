@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from dataset import GPTDataset
 
 # Trainging step: Clear gradiant from prev -> run model to get logits -> find loss from those digits compared to target ->
 # call backward to compute gradiant -> call optimizer step to actaully update weigths
@@ -58,36 +60,31 @@ def evaluate_model(model, train_loader, val_loader, num_batches=None):
     model.train()
     return (train_loss, val_loss)
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-from dataset import GPTDataset
+# Simply saving a chekpoint by taking the state of the model and optimzer
+# and saving them together with what epoch we are on to path
+def save_checkpoint(model, optimizer, epoch, path):
+    model_state = model.state_dict()
+    optimizer_state = optimizer.state_dict()
+    torch.save({"model_state_dict": model_state, 
+                "optimizer_state_dict": optimizer_state, 
+                "epoch": epoch}, path)
 
 class TinyModel(nn.Module):
-    def __init__(self, vocab_size, d_model):
+    def __init__(self):
         super().__init__()
-        self.emb = nn.Embedding(vocab_size, d_model)
-        self.out = nn.Linear(d_model, vocab_size)
-    def forward(self, ids):
-        return self.out(self.emb(ids))
-
-train_ids = [1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2]   # 6 windows
-val_ids   = [3,4,5,6,7,1,2,3]                     # 2 windows
-
-train_ds = GPTDataset(train_ids, context_size=4, stride=2)
-val_ds   = GPTDataset(val_ids, context_size=4, stride=2)
-
-train_dl = DataLoader(train_ds, batch_size=2, shuffle=False)   # 3 batches/epoch
-val_dl   = DataLoader(val_ds, batch_size=2, shuffle=False)
+        self.lin = nn.Linear(4, 4)
+    def forward(self, x):
+        return self.lin(x)
 
 torch.manual_seed(42)
-model = TinyModel(vocab_size=8, d_model=8)
+model = TinyModel()
 optimizer = torch.optim.AdamW(model.parameters(), lr=0.01)
 
-train_losses, val_losses = train_model(
-    model, train_dl, val_dl, optimizer,
-    num_epochs=2, eval_freq=2, eval_num_batches=1
-)
+save_checkpoint(model, optimizer, epoch=3, path="/tmp/ckpt.pt")
 
-print(train_losses, val_losses)
+# now inspect what actually got written
+loaded = torch.load("/tmp/ckpt.pt", weights_only=False)
+print(list(loaded.keys()))
+print(loaded["epoch"])
+print(list(loaded["model_state_dict"].keys()))
+print(list(loaded["optimizer_state_dict"].keys()))
