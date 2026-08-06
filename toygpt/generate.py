@@ -63,20 +63,3 @@ def generate(model, ids, num_new_tokens, context_length, temperature=1.0, top_k=
         ids = torch.cat([ids, torch.tensor([[next_t]])], dim=1)
     return ids 
 
-torch.manual_seed(123)
-
-model = GPTModel(vocab_size=10, d_model=8, num_heads=2, num_layers=2, d_ff=16, context_length=6)
-ids = torch.tensor([[1, 2, 3]])   # shape (1, 3) -- note the batch dimension
-
-torch.manual_seed(0)
-out1 = generate(model, ids, num_new_tokens=4, context_length=6, temperature=1.0, top_k=None)
-print(out1)   # tensor([[1, 2, 3, 6, 1, 2, 3]])
-
-torch.manual_seed(0)
-out2 = generate(model, ids, num_new_tokens=4, context_length=6, temperature=1.0, top_k=3)
-print(out2)   # tensor([[1, 2, 3, 4, 1, 0, 2]])
-
-torch.manual_seed(0)
-out3 = generate(model, ids, num_new_tokens=8, context_length=6, temperature=1.0, top_k=None)
-print(out3)          # tensor([[1, 2, 3, 6, 1, 2, 3, 1, 8, 1, 4]])
-print(out3.shape[1]) # 11

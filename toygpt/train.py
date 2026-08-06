@@ -69,22 +69,12 @@ def save_checkpoint(model, optimizer, epoch, path):
                 "optimizer_state_dict": optimizer_state, 
                 "epoch": epoch}, path)
 
-class TinyModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.lin = nn.Linear(4, 4)
-    def forward(self, x):
-        return self.lin(x)
 
-torch.manual_seed(42)
-model = TinyModel()
-optimizer = torch.optim.AdamW(model.parameters(), lr=0.01)
-
-save_checkpoint(model, optimizer, epoch=3, path="/tmp/ckpt.pt")
-
-# now inspect what actually got written
-loaded = torch.load("/tmp/ckpt.pt", weights_only=False)
-print(list(loaded.keys()))
-print(loaded["epoch"])
-print(list(loaded["model_state_dict"].keys()))
-print(list(loaded["optimizer_state_dict"].keys()))
+# Load the stored wiegths to the model and optimzer not creating a new one
+# aswell as return the epoch it was on when saved
+def load_checkpoint(model, optimzer, path):
+    checkpoint = torch.load(path, weights_only=True)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    optimzer.load_state_dict(checkpoint["optimizer_state_dict"])
+    epoch = checkpoint["epoch"]
+    return epoch

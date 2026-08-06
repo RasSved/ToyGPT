@@ -53,9 +53,9 @@ class MultiHeadAttention(nn.Module):
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = d_model // num_heads
-        self.W_query = nn.Linear(d_model, d_model, bias=False)
-        self.W_key   = nn.Linear(d_model, d_model, bias=False)
-        self.W_value = nn.Linear(d_model, d_model, bias=False)
+        self.W_query = nn.Linear(d_model, d_model, bias=True)
+        self.W_key   = nn.Linear(d_model, d_model, bias=True)
+        self.W_value = nn.Linear(d_model, d_model, bias=True)
         self.out_proj = nn.Linear(d_model, d_model)
         self.dropout = nn.Dropout(dropout)
         self.register_buffer(
@@ -77,7 +77,7 @@ class MultiHeadAttention(nn.Module):
 class FeedForward(nn.Module):
     def __init__(self, d_model, d_ff):
         super().__init__()
-        self.net = nn.Sequential(nn.Linear(d_model, d_ff), nn.GELU(), nn.Linear(d_ff, d_model))
+        self.net = nn.Sequential(nn.Linear(d_model, d_ff), nn.GELU(approximate="tanh"), nn.Linear(d_ff, d_model))
 
     def forward(self, x):
         return self.net(x)
