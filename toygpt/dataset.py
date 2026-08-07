@@ -44,3 +44,26 @@ class GPTDataset(Dataset):
 
     def __getitem__(self, idx):
         return (self.input_ids[idx], self.target_ids[idx])
+
+
+# Data prep util where we turn ids into maxlength by either cutting or padding 
+# with a given token 
+def pad_or_truncate(ids, max_length, pad_token_id):
+    if len(ids) >= max_length:
+        return ids[:max_length]
+    
+    copy = ids.copy()
+    while len(copy) < max_length:
+        copy.append(pad_token_id)
+    return copy
+
+# Here we want to find what our max length actaully is and is used by looking at the 
+# longest seq in the dataset
+def longest_sequence_length(encoded_text):
+    if encoded_text:
+        return len(max(encoded_text, key=len))
+    else:
+        raise ValueError("Empty Text Encoding")
+
+
+print(longest_sequence_length([[12], [5, 10, 3]]))

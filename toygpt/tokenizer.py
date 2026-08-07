@@ -10,6 +10,7 @@ class bpe:
         self.pattern = re.compile(self.PATTERN)
         self.vocab = {idx: bytes([idx]) for idx in range(256)}
         self.merges = {}
+        self.output = []
 
     # Use that pattern we made with the or checks
     def regex_split(self, text):
@@ -35,8 +36,12 @@ class bpe:
 
         for pair, new_id in self.merges.items():
             id_list = [self.merge(ids, pair, new_id) for ids in id_list]
+        
+        output = [self.output + idx for idx in id_list]
+        return output
 
-        return id_list
+
+
 
     # Turns ids back into its original text
     def decode(self, ids):
@@ -121,13 +126,8 @@ class tokenizer(object):
         return text 
     
 
-with open ("data/the-verdict.txt", "r") as f:
-    text = f.read()
 
-tokenizer = bpe()
-tokens = tokenizer.regex_split(text)
-encoded = tokenizer.utf_encoding(tokens)
-ids_list = tokenizer.get_ids(encoded)
-final_ids = tokenizer.train(ids_list, num_merges=50)
+train_text = "the cat sat on the mat. the cat ran fast."
 
-
+tk = bpe()
+print(tk.encoding(train_text))
