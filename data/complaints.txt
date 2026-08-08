@@ -1,0 +1,33 @@
+text,label
+"I was charged twice for my last order and need a refund.",billing
+"My invoice shows an incorrect amount, please correct it.",billing
+"Why did my subscription price increase without notice?",billing
+"I want to dispute a charge on my credit card statement.",billing
+"The discount code I used was not applied to my total.",billing
+"I'm still waiting for my refund from three weeks ago.",billing
+"My payment failed but the amount was still deducted.",billing
+"Can you explain the extra fee added to my bill this month?",billing
+"The app crashes every time I try to log in.",technical
+"I can't reset my password, the link keeps expiring.",technical
+"Your website is throwing a 500 error on checkout.",technical
+"The mobile app won't sync with my desktop account.",technical
+"I keep getting logged out randomly during a session.",technical
+"The search feature returns no results for valid queries.",technical
+"Two-factor authentication codes never arrive by email.",technical
+"The dashboard is stuck loading and never finishes.",technical
+"My package was marked delivered but I never received it.",shipping
+"The tracking number you gave me doesn't work.",shipping
+"My order has been stuck in transit for two weeks.",shipping
+"I received the wrong item in my shipment.",shipping
+"The box arrived damaged and the product inside is broken.",shipping
+"Delivery was supposed to arrive yesterday but hasn't shown up.",shipping
+"Can you tell me why my shipment is delayed again?",shipping
+"I need to change the delivery address before it ships.",shipping
+"Do you offer a student discount on annual plans?",other
+"I love the new update, great work on the redesign.",other
+"How do I close my account permanently?",other
+"Is there a referral program I can sign up for?",other
+"Can you add support for dark mode in the app?",other
+"I just wanted to say your customer service team was great.",other
+"What are your hours of operation for phone support?",other
+"Do you have an API available for developers?",other

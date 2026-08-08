@@ -10,7 +10,6 @@ class bpe:
         self.pattern = re.compile(self.PATTERN)
         self.vocab = {idx: bytes([idx]) for idx in range(256)}
         self.merges = {}
-        self.output = []
 
     # Use that pattern we made with the or checks
     def regex_split(self, text):
@@ -28,7 +27,8 @@ class bpe:
     def get_ids(self, encoded_tokens):
         return [list(token) for token in encoded_tokens]
 
-    # Use the learned merges on new text and return its ids
+    # Use the learned merges on new text and return its ids along with flattening the returned 
+    # encoding so we get one list instead of list of lists
     def encoding(self, text):
         regex = self.regex_split(text)
         encoding = self.utf_encoding(regex)
@@ -36,9 +36,11 @@ class bpe:
 
         for pair, new_id in self.merges.items():
             id_list = [self.merge(ids, pair, new_id) for ids in id_list]
-        
-        output = [self.output + idx for idx in id_list]
-        return output
+
+        flattened = []
+        for idx in id_list:
+            flattened += idx
+        return flattened
 
 
 

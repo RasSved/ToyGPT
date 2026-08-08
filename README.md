@@ -1,5 +1,5 @@
 # ToyGPT
-Creating an LLM from scratch.
+Creating a LLM from scratch.
 
 # Structure 
 ## toygpt/tokenizer.py  

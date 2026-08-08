@@ -18,7 +18,25 @@ def create_pairs(ids, context_size, stride):
 
         tuple_lst.append((input, target))
     return tuple_lst
- 
+
+# Data prep util where we turn ids into maxlength by either cutting or padding 
+# with a given token 
+def pad_or_truncate(ids, max_length, pad_token_id):
+    if len(ids) >= max_length:
+        return ids[:max_length]
+    
+    copy = ids.copy()
+    while len(copy) < max_length:
+        copy.append(pad_token_id)
+    return copy
+
+# Here we want to find what our max length actaully is and is used by looking at the 
+# longest seq in the dataset
+def longest_sequence_length(encoded_text):
+    if encoded_text:
+        return len(max(encoded_text, key=len))
+    else:
+        raise ValueError("Empty Text Encoding")
 
 class GPTDataset(Dataset):
     def __init__(self, token_ids, context_size, stride):
@@ -45,25 +63,31 @@ class GPTDataset(Dataset):
     def __getitem__(self, idx):
         return (self.input_ids[idx], self.target_ids[idx])
 
+# Data set for complaints where instead of sliding windowd get texts with labels, we encode the texts 
+# and pass the output in order to get encoding + labels pairs
+class ComplaintDataset(Dataset):
+    def __init__(self, texts, labels, encode_fn, pad_token_id, max_length=None):
+        self.texts = texts
+        self.labels = torch.LongTensor(labels)
+        self.encode_fn = encode_fn
+        self.pad_token_id = pad_token_id
+        self.max_length = max_length
+        self.reshaped = []
+        
+        encoded = [self.encode_fn(text) for text in self.texts]
+        if self.max_length is None:
+            self.max_length = longest_sequence_length(encoded)
 
-# Data prep util where we turn ids into maxlength by either cutting or padding 
-# with a given token 
-def pad_or_truncate(ids, max_length, pad_token_id):
-    if len(ids) >= max_length:
-        return ids[:max_length]
+        for encoded_text in encoded:
+            padded = pad_or_truncate(encoded_text, self.max_length, self.pad_token_id)
+            self.reshaped.append(torch.LongTensor(padded))
+        
+    def __len__(self):
+        return len(self.reshaped)
     
-    copy = ids.copy()
-    while len(copy) < max_length:
-        copy.append(pad_token_id)
-    return copy
-
-# Here we want to find what our max length actaully is and is used by looking at the 
-# longest seq in the dataset
-def longest_sequence_length(encoded_text):
-    if encoded_text:
-        return len(max(encoded_text, key=len))
-    else:
-        raise ValueError("Empty Text Encoding")
+    def __getitem__(self, idx):
+        return (self.reshaped[idx], self.labels[idx])
 
 
-print(longest_sequence_length([[12], [5, 10, 3]]))
+
+

@@ -48,6 +48,12 @@ def gpt_model(ids, token_embedding_matrix, pos_embedding_matrix, block_params_li
 
 # --------------------------------- USING PYTORCH ---------------------------------------------------------------------
 
+
+# Freezing the models parameters so we dont train them, will be used for finetuning existing models 
+def freeze_parameters(model):
+    model.parameters(requires_grad=False)
+
+
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, num_heads, context_length, dropout=0.0):
         super().__init__()
